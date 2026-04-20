@@ -1,0 +1,277 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+<meta charset="UTF-8">
+<title>BioLink</title>
+
+<style>
+body {
+  margin: 0;
+  background: black;
+  color: white;
+  font-family: Arial;
+  overflow: hidden;
+}
+
+/* ENTRY */
+#entry {
+  position: fixed;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 28px;
+  background: black;
+  cursor: pointer;
+  z-index: 10;
+}
+
+/* CURSOR */
+.cursor {
+  position: fixed;
+  width: 8px;
+  height: 8px;
+  background: white;
+  border-radius: 50%;
+  pointer-events: none;
+  z-index: 999;
+}
+
+.trail {
+  position: fixed;
+  width: 6px;
+  height: 6px;
+  background: white;
+  opacity: 0.5;
+  border-radius: 50%;
+  pointer-events: none;
+}
+
+/* LAYOUT */
+.container {
+  height: 100vh;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.main {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  transition: transform 0.1s;
+}
+
+/* CARD */
+.card {
+  background: rgba(20,20,20,0.6);
+  backdrop-filter: blur(20px);
+  padding: 16px;
+  border-radius: 16px;
+}
+
+/* GLOW */
+.glow {
+  text-shadow:
+    0 0 6px white,
+    0 0 12px rgba(255,255,255,0.6);
+}
+
+/* TOP BAR */
+.top {
+  position: absolute;
+  top: 20px;
+  left: 20px;
+  font-size: 14px;
+}
+
+/* PROFILE */
+.avatar {
+  width: 80px;
+  height: 80px;
+  border-radius: 12px;
+}
+
+.badges span {
+  margin-right: 6px;
+}
+
+.socials a {
+  margin-right: 10px;
+  color: white;
+  text-decoration: none;
+  text-shadow: 0 0 6px white;
+}
+
+/* MUSIC */
+.progress {
+  height: 4px;
+  background: #333;
+  margin-top: 8px;
+}
+.progress div {
+  height: 100%;
+  background: white;
+}
+
+.cover {
+  width: 100%;
+  border-radius: 8px;
+}
+</style>
+</head>
+
+<body>
+
+<div id="entry">Click to enter</div>
+
+<div class="cursor" id="cursor"></div>
+
+<div class="top" id="top"></div>
+
+<div class="container">
+  <div class="main" id="main">
+
+    <!-- PROFILE -->
+    <div class="card glow">
+      <img src="https://picsum.photos/100" class="avatar">
+      <h2>hris</h2>
+
+      <div class="badges">
+        <span>👑 Owner</span>
+        <span>💸 Larp</span>
+        <span>🤖 Ai abuser</span>
+      </div>
+
+      <p>guns</p>
+
+      <div class="socials">
+        <a href="#">Discord</a>
+        <a href="#">Telegram</a>
+        <a href="#">NameMC</a>
+        <a href="#">TikTok</a>
+      </div>
+    </div>
+
+    <!-- DISCORD -->
+    <div class="card">
+      <div>Discord</div>
+      <div>hris.sh</div>
+      <div id="lastSeen"></div>
+    </div>
+
+    <!-- MUSIC -->
+    <div class="card">
+      <img src="https://picsum.photos/300/150" class="cover">
+      <div>god like - summrs</div>
+
+      <div class="progress">
+        <div id="bar"></div>
+      </div>
+
+      <button id="play">Play</button>
+    </div>
+
+  </div>
+</div>
+
+<script>
+/* =========================
+   FAKE DATABASE
+========================= */
+const user = {
+  views: 65605,
+  lastSeen: Date.now() - 1000 * 60 * 60,
+  music: "https://www.soundhelix.com/examples/mp3/SoundHelix-Song-1.mp3"
+}
+
+/* =========================
+   ENTRY + MUSIC
+========================= */
+const entry = document.getElementById("entry")
+const audio = new Audio(user.music)
+
+entry.onclick = () => {
+  entry.style.display = "none"
+  audio.play()
+}
+
+/* =========================
+   TOP BAR
+========================= */
+setInterval(() => {
+  const time = new Date().toLocaleTimeString("de-DE")
+  document.getElementById("top").innerText =
+    `${user.views} | ${time} | Germany`
+}, 1000)
+
+/* =========================
+   LAST SEEN
+========================= */
+function formatLastSeen(ts) {
+  const min = Math.floor((Date.now() - ts) / 60000)
+  return "last seen " + min + " min ago"
+}
+document.getElementById("lastSeen").innerText =
+  formatLastSeen(user.lastSeen)
+
+/* =========================
+   MUSIC PLAYER
+========================= */
+const btn = document.getElementById("play")
+const bar = document.getElementById("bar")
+let playing = false
+
+btn.onclick = () => {
+  if (!playing) audio.play()
+  else audio.pause()
+  playing = !playing
+  btn.innerText = playing ? "Pause" : "Play"
+}
+
+audio.ontimeupdate = () => {
+  bar.style.width =
+    (audio.currentTime / audio.duration) * 100 + "%"
+}
+
+/* =========================
+   CURSOR + TRAIL
+========================= */
+const cursor = document.getElementById("cursor")
+
+document.addEventListener("mousemove", e => {
+  cursor.style.left = e.clientX + "px"
+  cursor.style.top = e.clientY + "px"
+
+  const t = document.createElement("div")
+  t.className = "trail"
+  t.style.left = e.clientX + "px"
+  t.style.top = e.clientY + "px"
+
+  document.body.appendChild(t)
+
+  setTimeout(() => t.remove(), 300)
+})
+
+/* =========================
+   PARALLAX (ONLY MAIN BOX)
+========================= */
+const main = document.getElementById("main")
+
+main.addEventListener("mousemove", e => {
+  const rect = main.getBoundingClientRect()
+
+  const x = (e.clientX - rect.left) / rect.width - 0.5
+  const y = (e.clientY - rect.top) / rect.height - 0.5
+
+  main.style.transform =
+    `rotateX(${y * -10}deg) rotateY(${x * 10}deg)`
+})
+
+main.addEventListener("mouseleave", () => {
+  main.style.transform = "rotateX(0) rotateY(0)"
+})
+</script>
+
+</body>
+</html>
